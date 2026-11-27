@@ -1,0 +1,27 @@
+name: ping
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: hello
+        run: |
+          echo "ubuntu ok"
+          uname -a
+          nproc
+
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: hello
+        run: |
+          echo "macos ok"
+          sw_vers
+          uname -m
