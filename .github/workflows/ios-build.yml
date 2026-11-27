@@ -1,0 +1,73 @@
+name: iOS build (scratch: real repo, queue-free macos-15)
+
+# Runs 871554520/mew-recomp's iOS build chain (build_ios.sh) on this repo's
+# macOS runner, so the main repo's macOS queue is never involved.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'mew-recomp ref (sha or branch)'
+        required: true
+        default: 'main'
+      sdl_tag:
+        description: 'SDL3 tag'
+        required: false
+        default: 'release-3.2.0'
+      build_ios:
+        description: '1 = run full iOS build after syntax check'
+        required: false
+        default: '1'
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout mew-recomp
+        uses: actions/checkout@v4
+        with:
+          repository: 871554520/mew-recomp
+          ref: ${{ inputs.ref }}
+          fetch-depth: 1
+
+      - name: 环境自检
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          cmake --version | head -1
+          python3 --version
+          git log -1 --format='head=%h %s'
+
+      - name: 脚本语法自检
+        run: |
+          set -euo pipefail
+          bash -n ios_port/build_ios.sh
+          echo "build_ios.sh 语法 OK"
+
+      - name: 全流程构建
+        if: ${{ inputs.build_ios == '1' }}
+        env:
+          SDL_TAG: ${{ inputs.sdl_tag }}
+        run: |
+          set -euo pipefail
+          chmod +x ios_port/build_ios.sh
+          ./ios_port/build_ios.sh
+
+      - name: 失败也要留现场
+        if: always()
+        run: |
+          echo "===== out/ ====="; ls -l out 2>/dev/null || true
+          echo "===== build_report ====="; tail -80 out/build_report.txt 2>/dev/null || true
+          echo "===== sdl_build tail ====="; tail -40 out/sdl_build.log 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-build-${{ github.run_id }}
+          path: |
+            out/*.ipa
+            out/build_report.txt
+            out/libmew_relinked.dylib
+          if-no-files-found: warn
+          retention-days: 7
