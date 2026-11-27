@@ -1,0 +1,20 @@
+name: "SSE4.2 golden (hardware vs ref)"
+
+# 用真实 x86-64 硬件指令当金标准，判定 runtime 里 pcmpestrm 的语义选择。
+# 1 秒级，不占 macOS 队列，也不需要任何 secret。
+on:
+  push:
+    paths:
+      - 'tests/**'
+      - '.github/workflows/sse42-golden.yml'
+  workflow_dispatch:
+
+jobs:
+  golden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 硬件 SSE4.2 金测
+        run: |
+          g++ -O2 -msse4.2 tests/test_sse42_pcmp.cpp -o /tmp/t
+          /tmp/t
