@@ -1,0 +1,23 @@
+name: tools-selftest
+
+# 目的：把「本地没有 C++ 编译器」时唯一能自证的那部分逻辑放到不占队列的地方跑。
+# 这两个脚本都是纯 Python、不依赖 PE / lief，所以不需要 checkout 主仓、不需要任何 secret。
+on:
+  push:
+    paths:
+      - 'tools/**'
+      - '.github/workflows/tools-selftest.yml'
+  workflow_dispatch:
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: ff25 thunk 形状判定（8 例）
+        run: python3 tools/test_thunk_shapes.py
+      - name: PCMPxSTRx 语义（8 例）
+        run: python3 tools/test_pcmp_semantics.py
