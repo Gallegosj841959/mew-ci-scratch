@@ -1,7 +1,5 @@
-name: iOS build (scratch: real repo, queue-free macos-15)
+name: "iOS build (scratch - real repo, macos-15)"
 
-# Runs 871554520/mew-recomp's iOS build chain (build_ios.sh) on this repo's
-# macOS runner, so the main repo's macOS queue is never involved.
 on:
   workflow_dispatch:
     inputs:
@@ -30,7 +28,7 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 1
 
-      - name: 环境自检
+      - name: Env check
         run: |
           set -euo pipefail
           xcodebuild -version
@@ -39,14 +37,14 @@ jobs:
           python3 --version
           git log -1 --format='head=%h %s'
 
-      - name: 脚本语法自检
+      - name: Script syntax check
         run: |
           set -euo pipefail
           bash -n ios_port/build_ios.sh
-          echo "build_ios.sh 语法 OK"
+          echo "build_ios.sh syntax OK"
 
-      - name: 全流程构建
-        if: ${{ inputs.build_ios == '1' }}
+      - name: Full build
+        if: inputs.build_ios == '1'
         env:
           SDL_TAG: ${{ inputs.sdl_tag }}
         run: |
@@ -54,7 +52,7 @@ jobs:
           chmod +x ios_port/build_ios.sh
           ./ios_port/build_ios.sh
 
-      - name: 失败也要留现场
+      - name: Dump on failure
         if: always()
         run: |
           echo "===== out/ ====="; ls -l out 2>/dev/null || true
